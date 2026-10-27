@@ -6,10 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nova Calculator</title>
     <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
 </head>
 <body>
 
-    <div class="app">
+    <main class="app">
         <header class="top">
             <div class="brand">
                 <div class="logo">✳</div>
@@ -21,7 +22,7 @@
             <span class="badge">● READY</span>
         </header>
 
-        <main class="calculator">
+        <section class="calculator">
             <div class="display">
                 <div class="previous" id="previous">Your calculation</div>
                 <div class="expression" id="expression">0</div>
@@ -53,15 +54,15 @@
 
                 <button class="utility" data-action="sign">+/−</button>
                 <button data-value="0">0</button>
-                <button data-value=".">.</button>
-                <button class="operator" data-value=")">)</button>
+                <button data-action="decimal">.</button>
+                <button class="utility" data-value=")">)</button>
 
-                <button class="utility" data-value="%">%</button>
-                <button class="utility" data-value="**">xʸ</button>
-                <button class="utility" data-value="sqrt(">√</button>
+                <button class="utility" data-action="percent">%</button>
+                <button class="utility" data-action="power">xʸ</button>
+                <button class="utility" data-action="sqrt">√</button>
                 <button class="equals" data-action="equals">=</button>
             </div>
-        </main>
+        </section>
 
         <section class="history-wrap">
             <div class="history-head">
@@ -70,10 +71,10 @@
                     Clear history
                 </button>
             </div>
+
             <div class="history-list" id="history">
-                <div class="history-item">
-                    <span>Your history will appear here</span>
-                    <span>—</span>
+                <div class="empty-history">
+                    Your history will appear here
                 </div>
             </div>
         </section>
@@ -84,10 +85,9 @@
         </footer>
 
         <p class="hint">
-            Enter = Calculate | Esc = Clear | Backspace = Delete
+            Enter = Calculate · Esc = Clear · Backspace = Delete
         </p>
-    </div>
+    </main>
 
-    <script src="script.js"></script>
 </body>
 </html>

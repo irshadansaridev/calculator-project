@@ -2,20 +2,22 @@
 const expressionEl = document.getElementById("expression");
 const previousEl = document.getElementById("previous");
 const resultEl = document.getElementById("result");
-const historyEl = document.getElementById("history");
 const keysEl = document.getElementById("keys");
+const historyEl = document.getElementById("history");
 
 let expression = "";
 let justCalculated = false;
 let history = [];
 
+const isDigit = char => char >= "0" && char <= "9";
+
 function pretty(value) {
     return value
+        .replace(/sqrt\(/g, "√(")
         .replace(/\*\*/g, "^")
         .replace(/\*/g, "×")
         .replace(/\//g, "÷")
-        .replace(/-/g, "−")
-        .replace(/sqrt\(/g, "√(");
+        .replace(/-/g, "−");
 }
 
 function formatNumber(number) {
@@ -30,27 +32,16 @@ function formatNumber(number) {
     return Number(number.toPrecision(12)).toString();
 }
 
-// Safe expression parser: evaluates only calculator operations.
-function evaluateExpression(input) {
-    if (!input.trim()) return 0;
+// Safe mathematical parser. It does not execute arbitrary JavaScript.
+function evaluate(input) {
+    const source = input.replace(/\s+/g, "");
 
-    let source = input.replace(/\s+/g, "");
-
-    if (!/^[0-9+\-*/().%a-z]+$/i.test(source)) {
-        throw new Error("Invalid expression");
-    }
-
-    // Only the explicitly supported function is allowed.
-    source = source.replace(/sqrt\(/g, "S(");
-
-    if (/[a-z]/i.test(source.replace(/S/g, ""))) {
-        throw new Error("Invalid expression");
-    }
+    if (!source) return 0;
 
     let position = 0;
 
     function peek() {
-        return source[position];
+        return source[position] || "";
     }
 
     function consume(char) {
@@ -61,20 +52,36 @@ function evaluateExpression(input) {
         return false;
     }
 
+    function expect(char, message) {
+        if (!consume(char)) {
+            throw new Error(message);
+        }
+    }
+
     function parseNumber() {
         const start = position;
+        let decimalSeen = false;
 
-        while (/[0-9.]/.test(peek() || "")) {
-            position++;
+        while (position < source.length) {
+            const char = peek();
+
+            if (isDigit(char)) {
+                position++;
+            } else if (char === "." && !decimalSeen) {
+                decimalSeen = true;
+                position++;
+            } else {
+                break;
+            }
         }
 
-        const raw = source.slice(start, position);
+        const token = source.slice(start, position);
 
-        if (!raw || raw === "." || (raw.match(/\./g) || []).length > 1) {
-            throw new Error("Invalid number");
+        if (!token || token === ".") {
+            throw new Error("Enter a valid number");
         }
 
-        const number = Number(raw);
+        const number = Number(token);
 
         if (!Number.isFinite(number)) {
             throw new Error("Invalid number");
@@ -83,31 +90,24 @@ function evaluateExpression(input) {
         return number;
     }
 
-    function primary() {
-        if (consume("+")) return unary();
-        if (consume("-")) return -unary();
-
+    function parsePrimary() {
         if (consume("(")) {
-            const value = addSub();
+            const value = parseExpression();
 
-            if (!consume(")")) {
-                throw new Error("Missing closing bracket");
-            }
+            expect(")", "Missing closing bracket");
 
             return value;
         }
 
-        if (source.slice(position, position + 2) === "S(") {
-            position += 2;
+        if (source.slice(position, position + 5) === "sqrt(") {
+            position += 5;
 
-            const value = addSub();
+            const value = parseExpression();
 
-            if (!consume(")")) {
-                throw new Error("Missing closing bracket");
-            }
+            expect(")", "Missing closing bracket");
 
             if (value < 0) {
-                throw new Error("Square root needs a positive number");
+                throw new Error("Square root of a negative number is not real");
             }
 
             return Math.sqrt(value);
@@ -116,8 +116,8 @@ function evaluateExpression(input) {
         return parseNumber();
     }
 
-    function unary() {
-        let value = primary();
+    function parsePostfix() {
+        let value = parsePrimary();
 
         while (consume("%")) {
             value /= 100;
@@ -126,29 +126,40 @@ function evaluateExpression(input) {
         return value;
     }
 
-    function power() {
-        let base = unary();
+    function parsePower() {
+        const base = parsePostfix();
 
-        if (consume("*")) {
-            if (!consume("*")) {
-                throw new Error("Invalid operator");
+        if (source.slice(position, position + 2) === "**") {
+            position += 2;
+
+            const exponent = parseUnary();
+            const result = Math.pow(base, exponent);
+
+            if (!Number.isFinite(result)) {
+                throw new Error("Result is outside the supported range");
             }
 
-            const exponent = power();
-            base = Math.pow(base, exponent);
+            return result;
         }
 
         return base;
     }
 
-    function multiplyDivide() {
-        let value = power();
+    function parseUnary() {
+        if (consume("+")) return parseUnary();
+        if (consume("-")) return -parseUnary();
+
+        return parsePower();
+    }
+
+    function parseMultiplication() {
+        let value = parseUnary();
 
         while (true) {
             if (consume("*")) {
-                value *= power();
+                value *= parseUnary();
             } else if (consume("/")) {
-                const divisor = power();
+                const divisor = parseUnary();
 
                 if (divisor === 0) {
                     throw new Error("Cannot divide by zero");
@@ -158,31 +169,43 @@ function evaluateExpression(input) {
             } else {
                 break;
             }
-        }
 
-        return value;
-    }
-
-    function addSub() {
-        let value = multiplyDivide();
-
-        while (true) {
-            if (consume("+")) {
-                value += multiplyDivide();
-            } else if (consume("-")) {
-                value -= multiplyDivide();
-            } else {
-                break;
+            if (!Number.isFinite(value)) {
+                throw new Error("Result is outside the supported range");
             }
         }
 
         return value;
     }
 
-    const answer = addSub();
+    function parseExpression() {
+        let value = parseMultiplication();
+
+        while (true) {
+            if (consume("+")) {
+                value += parseMultiplication();
+            } else if (consume("-")) {
+                value -= parseMultiplication();
+            } else {
+                break;
+            }
+
+            if (!Number.isFinite(value)) {
+                throw new Error("Result is outside the supported range");
+            }
+        }
+
+        return value;
+    }
+
+    if (!/^[0-9.+\-*/()%a-z]*$/i.test(source)) {
+        throw new Error("Invalid character");
+    }
+
+    const answer = parseExpression();
 
     if (position !== source.length) {
-        throw new Error("Check your expression");
+        throw new Error("Check the expression");
     }
 
     if (!Number.isFinite(answer)) {
@@ -193,7 +216,13 @@ function evaluateExpression(input) {
 }
 
 function render() {
-    expressionEl.textContent = expression ? pretty(expression) : "0";
+    expressionEl.textContent = expression
+        ? pretty(expression)
+        : "0";
+
+    expressionEl.scrollLeft = expressionEl.scrollWidth;
+
+    resultEl.classList.remove("error");
 
     if (!expression) {
         resultEl.textContent = "";
@@ -201,82 +230,184 @@ function render() {
     }
 
     try {
-        resultEl.textContent = "= " + formatNumber(
-            evaluateExpression(expression)
-        );
+        resultEl.textContent =
+            "= " + formatNumber(evaluate(expression));
     } catch {
         resultEl.textContent = "";
     }
 }
 
 function addValue(value) {
-    if (justCalculated && /[0-9.(]/.test(value)) {
-        expression = "";
-        previousEl.textContent = "New calculation";
-    }
+    if (justCalculated) {
+        if (
+            isDigit(value) ||
+            value === "." ||
+            value === "(" ||
+            value === "sqrt("
+        ) {
+            expression = "";
+            previousEl.textContent = "New calculation";
+        }
 
-    justCalculated = false;
+        justCalculated = false;
+    }
 
     if (value === ".") {
         const currentNumber = expression.split(/[+\-*/()%]/).pop();
 
-        if (currentNumber.includes(".")) return;
+        if (currentNumber.includes(".")) {
+            return;
+        }
 
-        if (!currentNumber) {
+        if (
+            !currentNumber ||
+            /[+\-*/(]$/.test(expression)
+        ) {
             value = "0.";
         }
     }
 
-    if (/^[+\-*/]$/.test(value) && /[+\-*/]$/.test(expression)) {
+    if (
+        /^[+\-*/]$/.test(value) &&
+        /[+\-*/]$/.test(expression)
+    ) {
         expression = expression.slice(0, -1);
     }
 
     expression += value;
+
     render();
 }
 
 function calculate() {
     try {
-        const answer = evaluateExpression(expression);
         const shownExpression = pretty(expression);
-        const output = formatNumber(answer);
+        const answer = formatNumber(evaluate(expression));
 
         previousEl.textContent = shownExpression + " =";
-        expression = output;
-        resultEl.textContent = output;
+
+        expression = answer;
         justCalculated = true;
+
+        resultEl.classList.remove("error");
+        resultEl.textContent = "Calculation complete";
 
         history.unshift({
             expr: shownExpression,
-            result: output
+            result: answer
         });
 
-        history = history.slice(0, 8);
+        history = history.slice(0, 10);
 
         renderHistory();
 
-        expressionEl.textContent = output;
-        resultEl.textContent = "Calculation complete";
+        expressionEl.textContent = answer;
     } catch (error) {
-        resultEl.textContent = error.message || "Invalid expression";
+        resultEl.textContent =
+            error.message || "Invalid expression";
+
+        resultEl.classList.add("error");
+    }
+}
+
+function toggleSign() {
+    if (!expression) {
+        expression = "-";
+    } else if (/^-?\d*\.?\d+$/.test(expression)) {
+        expression = formatNumber(-Number(expression));
+    } else {
+        expression = "-(" + expression + ")";
+    }
+
+    justCalculated = false;
+
+    render();
+}
+
+function applyAction(action) {
+    if (action === "clear") {
+        expression = "";
+        previousEl.textContent = "Your calculation";
+        justCalculated = false;
+
+        resultEl.classList.remove("error");
+
+        render();
+        return;
+    }
+
+    if (action === "delete") {
+        if (justCalculated) {
+            expression = "";
+            justCalculated = false;
+        } else if (expression.endsWith("sqrt(")) {
+            expression = expression.slice(0, -5);
+        } else if (expression.endsWith("**")) {
+            expression = expression.slice(0, -2);
+        } else {
+            expression = expression.slice(0, -1);
+        }
+
+        render();
+        return;
+    }
+
+    if (action === "equals") {
+        calculate();
+        return;
+    }
+
+    if (action === "decimal") {
+        addValue(".");
+        return;
+    }
+
+    if (action === "sign") {
+        toggleSign();
+        return;
+    }
+
+    if (action === "percent") {
+        const match = expression.match(/(\d*\.?\d+)$/);
+
+        if (match && !expression.endsWith("%")) {
+            expression =
+                expression.slice(0, match.index) +
+                match[0] +
+                "%";
+        } else if (expression.endsWith(")")) {
+            expression += "%";
+        }
+
+        justCalculated = false;
+        render();
+        return;
+    }
+
+    if (action === "power") {
+        expression += "**";
+        justCalculated = false;
+        render();
+        return;
+    }
+
+    if (action === "sqrt") {
+        expression = "sqrt(" + expression + ")";
+        justCalculated = false;
+        render();
     }
 }
 
 function renderHistory() {
-    historyEl.innerHTML = "";
+    historyEl.replaceChildren();
 
     if (history.length === 0) {
-        const row = document.createElement("div");
-        row.className = "history-item";
+        const empty = document.createElement("div");
 
-        const label = document.createElement("span");
-        label.textContent = "Your history will appear here";
+        empty.className = "empty-history";
+        empty.textContent = "Your history will appear here";
 
-        const dash = document.createElement("span");
-        dash.textContent = "—";
-
-        row.append(label, dash);
-        historyEl.appendChild(row);
+        historyEl.appendChild(empty);
         return;
     }
 
@@ -285,9 +416,9 @@ function renderHistory() {
         row.className = "history-item";
 
         const left = document.createElement("span");
-        left.textContent = item.expr;
-
         const right = document.createElement("span");
+
+        left.textContent = item.expr;
         right.textContent = "= " + item.result;
 
         row.append(left, right);
@@ -296,48 +427,12 @@ function renderHistory() {
             expression = item.result;
             previousEl.textContent = item.expr + " =";
             justCalculated = true;
+
             render();
         });
 
         historyEl.appendChild(row);
     });
-}
-
-function handleAction(action) {
-    if (action === "clear") {
-        expression = "";
-        previousEl.textContent = "Your calculation";
-        resultEl.textContent = "";
-        justCalculated = false;
-        render();
-    }
-
-    if (action === "delete") {
-        expression = expression.slice(0, -1);
-        justCalculated = false;
-        render();
-    }
-
-    if (action === "equals") {
-        calculate();
-    }
-
-    if (action === "sign") {
-        if (!expression) {
-            expression = "-";
-        } else {
-            try {
-                expression = formatNumber(
-                    -evaluateExpression(expression)
-                );
-            } catch {
-                expression = "-(" + expression + ")";
-            }
-        }
-
-        justCalculated = false;
-        render();
-    }
 }
 
 keysEl.addEventListener("click", event => {
@@ -346,7 +441,7 @@ keysEl.addEventListener("click", event => {
     if (!button) return;
 
     if (button.dataset.action) {
-        handleAction(button.dataset.action);
+        applyAction(button.dataset.action);
     } else {
         addValue(button.dataset.value);
     }
@@ -358,17 +453,24 @@ document.getElementById("clearHistory").addEventListener("click", () => {
 });
 
 document.addEventListener("keydown", event => {
-    if (/^[0-9().%+\-*/]$/.test(event.key)) {
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+    }
+
+    if (/^[0-9()+\-*/%]$/.test(event.key)) {
         event.preventDefault();
         addValue(event.key);
+    } else if (event.key === ".") {
+        event.preventDefault();
+        addValue(".");
     } else if (event.key === "Enter" || event.key === "=") {
         event.preventDefault();
         calculate();
     } else if (event.key === "Backspace") {
         event.preventDefault();
-        handleAction("delete");
+        applyAction("delete");
     } else if (event.key === "Escape") {
-        handleAction("clear");
+        applyAction("clear");
     }
 });
 

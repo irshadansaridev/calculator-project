@@ -1,4 +1,6 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
     --bg: #0b1020;
     --panel: rgba(19, 27, 49, 0.92);
@@ -6,27 +8,31 @@
     --muted: #91a0bd;
     --text: #f4f7ff;
     --accent: #8b5cf6;
-    --accent2: #22d3ee;
+    --cyan: #22d3ee;
 }
 
 * {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
 }
 
 body {
     min-height: 100vh;
+    margin: 0;
+    padding: 24px;
     display: grid;
     place-items: center;
-    padding: 24px;
     color: var(--text);
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Inter, Arial, sans-serif;
 
     background:
-        radial-gradient(ellipse at 15% 10%, #252056, transparent 38%),
-        radial-gradient(ellipse at 90% 85%, #073e52, transparent 34%),
+        radial-gradient(ellipse at 12% 8%, #252056 0, transparent 38%),
+        radial-gradient(ellipse at 92% 88%, #073e52 0, transparent 35%),
         var(--bg);
+}
+
+button {
+    font: inherit;
+    cursor: pointer;
 }
 
 .app {
@@ -37,45 +43,46 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     margin: 0 4px 16px;
-    gap: 10px;
 }
 
 .brand {
     display: flex;
-    gap: 11px;
     align-items: center;
+    gap: 11px;
 }
 
 .logo {
     width: 42px;
     height: 42px;
+    flex-shrink: 0;
     border-radius: 14px;
     display: grid;
     place-items: center;
     font-size: 21px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    background: linear-gradient(135deg, var(--accent), var(--cyan));
     box-shadow: 0 8px 25px #8b5cf644;
 }
 
 h1 {
+    margin: 0;
     font-size: 18px;
-    letter-spacing: 0.3px;
 }
 
 .brand p {
+    margin: 4px 0 0;
     color: var(--muted);
     font-size: 12px;
-    margin-top: 4px;
 }
 
 .badge {
-    font-size: 11px;
-    color: #a5f3fc;
-    border: 1px solid #22d3ee40;
-    background: #22d3ee12;
     padding: 7px 10px;
+    border: 1px solid #22d3ee40;
     border-radius: 99px;
+    color: #a5f3fc;
+    background: #22d3ee12;
+    font-size: 10px;
     white-space: nowrap;
 }
 
@@ -99,100 +106,107 @@ h1 {
 }
 
 .previous {
-    color: var(--muted);
-    font-size: 14px;
     min-height: 22px;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--muted);
+    font-size: 13px;
 }
 
 .expression {
     width: 100%;
-    text-align: right;
-    font-size: clamp(24px, 7vw, 36px);
-    font-weight: 500;
     min-height: 48px;
     overflow-x: auto;
     scrollbar-width: none;
+    text-align: right;
     white-space: nowrap;
+    font-size: clamp(26px, 7vw, 36px);
+}
+
+.expression::-webkit-scrollbar {
+    display: none;
 }
 
 .result {
-    color: #a5f3fc;
-    font-size: 14px;
     min-height: 22px;
     margin-top: 5px;
+    color: #a5f3fc;
+    font-size: 13px;
+}
+
+.result.error {
+    color: #fda4af;
 }
 
 .divider {
     height: 1px;
-    background: var(--line);
     margin-bottom: 17px;
+    background: var(--line);
 }
 
 .keys {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
 }
 
-button {
-    border: 1px solid transparent;
+.keys button {
+    min-width: 0;
     min-height: 58px;
+    border: 1px solid transparent;
     border-radius: 17px;
-    background: #ffffff0a;
     color: var(--text);
-    font-family: inherit;
+    background: #ffffff0a;
     font-size: 19px;
-    cursor: pointer;
     transition: transform 0.12s, background 0.15s;
     user-select: none;
 }
 
-button:hover {
+.keys button:hover {
     background: #ffffff16;
     border-color: #ffffff15;
 }
 
-button:active {
+.keys button:active {
     transform: scale(0.96);
 }
 
-.utility {
+.keys .utility {
     color: #b7c5e1;
     background: #ffffff0d;
     font-size: 15px;
 }
 
-.operator {
+.keys .operator {
     color: #c4b5fd;
     background: #8b5cf61b;
 }
 
-.equals {
+.keys .equals {
+    color: white;
     background: linear-gradient(135deg, var(--accent), #6d5dfc);
     box-shadow: 0 7px 20px #8b5cf633;
-    font-size: 24px;
+    font-size: 25px;
 }
 
 .history-wrap {
     margin-top: 14px;
+    overflow: hidden;
     border: 1px solid var(--line);
     border-radius: 20px;
     background: #ffffff06;
-    overflow: hidden;
 }
 
 .history-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 10px;
     padding: 13px 15px;
     color: #c7d2e8;
     font-size: 13px;
-    gap: 10px;
 }
 
 .clear-history {
@@ -200,22 +214,20 @@ button:active {
     background: transparent;
     color: var(--muted);
     font-size: 12px;
-    min-height: auto;
-    padding: 4px 0;
 }
 
 .history-list {
-    max-height: 150px;
-    overflow: auto;
+    max-height: 155px;
+    overflow-y: auto;
 }
 
 .history-item {
-    padding: 10px 15px;
-    border-top: 1px solid var(--line);
     display: flex;
     justify-content: space-between;
-    gap: 10px;
-    font-size: 13px;
+    gap: 12px;
+    padding: 10px 15px;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
     cursor: pointer;
 }
 
@@ -224,10 +236,10 @@ button:active {
 }
 
 .history-item span:first-child {
-    color: var(--muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--muted);
 }
 
 .history-item span:last-child {
@@ -235,23 +247,34 @@ button:active {
     white-space: nowrap;
 }
 
+.empty-history {
+    padding: 12px 15px;
+    border-top: 1px solid var(--line);
+    color: #7786a5;
+    font-size: 12px;
+}
+
 footer {
     display: flex;
     justify-content: space-between;
     gap: 10px;
-    color: #7786a5;
-    font-size: 11px;
     margin: 15px 5px 0;
+    color: #7786a5;
+    font-size: 10px;
 }
 
 .hint {
+    margin: 13px 0 0;
     color: #7786a5;
-    font-size: 11px;
+    font-size: 10px;
     text-align: center;
-    margin-top: 13px;
 }
 
 @media (max-width: 380px) {
+    body {
+        padding: 14px;
+    }
+
     .calculator {
         padding: 15px;
     }
@@ -260,12 +283,8 @@ footer {
         gap: 7px;
     }
 
-    button {
+    .keys button {
         min-height: 53px;
         border-radius: 14px;
-    }
-
-    .badge {
-        font-size: 9px;
     }
 }
