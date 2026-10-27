@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Calculator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app">
+        <header class="top">
+            <div class="brand">
+                <div class="logo">✳</div>
+                <div>
+                    <h1>Nova Calculator</h1>
+                    <p>Simple math. Smooth experience.</p>
+                </div>
+            </div>
+            <span class="badge">● READY</span>
+        </header>
+
+        <main class="calculator">
+            <div class="display">
+                <div class="previous" id="previous">Your calculation</div>
+                <div class="expression" id="expression">0</div>
+                <div class="result" id="result"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="keys" id="keys">
+                <button class="utility" data-action="clear">AC</button>
+                <button class="utility" data-action="delete">⌫</button>
+                <button class="utility" data-value="(">(</button>
+                <button class="operator" data-value="/">÷</button>
+
+                <button data-value="7">7</button>
+                <button data-value="8">8</button>
+                <button data-value="9">9</button>
+                <button class="operator" data-value="*">×</button>
+
+                <button data-value="4">4</button>
+                <button data-value="5">5</button>
+                <button data-value="6">6</button>
+                <button class="operator" data-value="-">−</button>
+
+                <button data-value="1">1</button>
+                <button data-value="2">2</button>
+                <button data-value="3">3</button>
+                <button class="operator" data-value="+">+</button>
+
+                <button class="utility" data-action="sign">+/−</button>
+                <button data-value="0">0</button>
+                <button data-value=".">.</button>
+                <button class="operator" data-value=")">)</button>
+
+                <button class="utility" data-value="%">%</button>
+                <button class="utility" data-value="**">xʸ</button>
+                <button class="utility" data-value="sqrt(">√</button>
+                <button class="equals" data-action="equals">=</button>
+            </div>
+        </main>
+
+        <section class="history-wrap">
+            <div class="history-head">
+                <span>Recent Calculations</span>
+                <button class="clear-history" id="clearHistory">
+                    Clear history
+                </button>
+            </div>
+            <div class="history-list" id="history">
+                <div class="history-item">
+                    <span>Your history will appear here</span>
+                    <span>—</span>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <span>Keyboard supported</span>
+            <span>Made for everyday math</span>
+        </footer>
+
+        <p class="hint">
+            Enter = Calculate | Esc = Clear | Backspace = Delete
+        </p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
